@@ -11,18 +11,18 @@ import (
 	"strings"
 	"time"
 
-	"github.com/h0tak88r/AutoAR/v3/internal/modules/backup"
 	aemmod "github.com/h0tak88r/AutoAR/v3/internal/modules/aem"
 	apkxmod "github.com/h0tak88r/AutoAR/v3/internal/modules/apkx"
+	"github.com/h0tak88r/AutoAR/v3/internal/modules/backup"
 	"github.com/h0tak88r/AutoAR/v3/internal/modules/checktools"
 	"github.com/h0tak88r/AutoAR/v3/internal/modules/cnames"
 	"github.com/h0tak88r/AutoAR/v3/internal/modules/dalfox"
-	"github.com/h0tak88r/AutoAR/v3/internal/modules/depconfusion"
 	"github.com/h0tak88r/AutoAR/v3/internal/modules/db"
+	"github.com/h0tak88r/AutoAR/v3/internal/modules/depconfusion"
 	"github.com/h0tak88r/AutoAR/v3/internal/modules/dns"
 	domainmod "github.com/h0tak88r/AutoAR/v3/internal/modules/domain"
+	"github.com/h0tak88r/AutoAR/v3/internal/modules/envloader"
 	"github.com/h0tak88r/AutoAR/v3/internal/modules/fastlook"
-	subdomainmod "github.com/h0tak88r/AutoAR/v3/internal/modules/subdomain"
 	"github.com/h0tak88r/AutoAR/v3/internal/modules/ffuf"
 	"github.com/h0tak88r/AutoAR/v3/internal/modules/gf"
 	"github.com/h0tak88r/AutoAR/v3/internal/modules/github-wordlist"
@@ -37,17 +37,17 @@ import (
 	"github.com/h0tak88r/AutoAR/v3/internal/modules/nuclei"
 	"github.com/h0tak88r/AutoAR/v3/internal/modules/ports"
 	"github.com/h0tak88r/AutoAR/v3/internal/modules/reflection"
-	s3mod 	"github.com/h0tak88r/AutoAR/v3/internal/modules/s3"
+	s3mod "github.com/h0tak88r/AutoAR/v3/internal/modules/s3"
+	scopemod "github.com/h0tak88r/AutoAR/v3/internal/modules/scope"
 	"github.com/h0tak88r/AutoAR/v3/internal/modules/setup"
 	"github.com/h0tak88r/AutoAR/v3/internal/modules/sqlmap"
-	"github.com/h0tak88r/AutoAR/v3/internal/modules/subdomains"
+	subdomainmod "github.com/h0tak88r/AutoAR/v3/internal/modules/subdomain"
 	subdomainmonitor "github.com/h0tak88r/AutoAR/v3/internal/modules/subdomainmonitor"
+	"github.com/h0tak88r/AutoAR/v3/internal/modules/subdomains"
 	"github.com/h0tak88r/AutoAR/v3/internal/modules/tech"
 	"github.com/h0tak88r/AutoAR/v3/internal/modules/urls"
 	"github.com/h0tak88r/AutoAR/v3/internal/modules/utils"
 	"github.com/h0tak88r/AutoAR/v3/internal/modules/wp-confusion"
-	"github.com/h0tak88r/AutoAR/v3/internal/modules/envloader"
-	scopemod "github.com/h0tak88r/AutoAR/v3/internal/modules/scope"
 	"github.com/h0tak88r/AutoAR/v3/internal/modules/zerodays"
 	"github.com/h0tak88r/AutoAR/v3/internal/tools/apkx/downloader"
 	"github.com/h0tak88r/AutoAR/v3/internal/tools/apkx/mitm"
@@ -104,18 +104,18 @@ func printUsage() {
 	usage := `Usage: autoar <command> <action> [options]
 
 Commands:
-  subdomains get      -d <domain>
-  livehosts get       -d <domain>
-  cnames get          -d <domain>
-  urls collect        -d <domain> [--subdomain]
-  js scan             -d <domain> [-s <subdomain>]
-  reflection scan     -d <domain>
-  nuclei run          -d <domain>
-  tech detect         -d <domain>
-  ports scan          -d <domain>
-  gf scan             -d <domain>
-  sqlmap run          -d <domain>
-  dalfox run          -d <domain>
+  subdomains get      -d <domain> | -f <domains_file>
+  livehosts get       -d <domain> | -f <domains_file>
+  cnames get          -d <domain> | -f <domains_file>
+  urls collect        -d <domain> | -f <domains_file> [--subdomain]
+  js scan             -d <domain> | -f <domains_file> [-s <subdomain>]
+  reflection scan     -d <domain> | -f <domains_file>
+  nuclei run          -d <domain> | -f <domains_file>
+  tech detect         -d <domain> | -f <domains_file>
+  ports scan          -d <domain> | -f <domains_file>
+  gf scan             -d <domain> | -f <domains_file>
+  sqlmap run          -d <domain> | -f <domains_file>
+  dalfox run          -d <domain> | -f <domains_file>
   
   monitor updates add    -u <url> [--strategy ...] [--pattern <regex>]
   monitor updates remove -u <url>
@@ -123,13 +123,13 @@ Commands:
   monitor updates stop   [--all]
   monitor updates list
   wpDepConf scan      -d <domain> | -l <live_hosts_file>
-  dns takeover        -d <domain>     (comprehensive scan)
-  dns cname           -d <domain>     (CNAME takeover only)
-  dns ns              -d <domain>     (NS takeover only)
-  dns azure-aws       -d <domain>     (Azure/AWS takeover only)
-  dns dnsreaper       -d <domain>     (DNSReaper scan only)
-  dns dangling-ip     -d <domain>     (Dangling IP detection only)
-  dns all             -d <domain>     (comprehensive scan)
+  dns takeover        -d <domain> | -f <domains_file>     (comprehensive scan)
+  dns cname           -d <domain> | -f <domains_file>     (CNAME takeover only)
+  dns ns              -d <domain> | -f <domains_file>     (NS takeover only)
+  dns azure-aws       -d <domain> | -f <domains_file>     (Azure/AWS takeover only)
+  dns dnsreaper       -d <domain> | -f <domains_file>     (DNSReaper scan only)
+  dns dangling-ip     -d <domain> | -f <domains_file>     (Dangling IP detection only)
+  dns all             -d <domain> | -f <domains_file>     (comprehensive scan)
   s3 scan             -b <bucket> [-r <region>]
   s3 enum             -b <root_domain>
   github scan         -r <owner/repo>
@@ -142,7 +142,7 @@ Commands:
   backup scan            -f <domains_file> [-m <method>] [-ex <extensions>] [-o <output_dir>] [-t <threads>] [--delay <ms>]
                          Methods: regular, withoutdots, withoutvowels, reverse, mixed, withoutdv, shuffle, all
                          Extensions: comma-separated (e.g., .rar,.zip,.tar.gz) - default: all (uses all common backup extensions)
-  aem scan               -d <domain> | -l <live_hosts_file> [-o <output_dir>] [-t <threads>] [--ssrf-host <host>] [--ssrf-port <port>] [--proxy <proxy>] [--debug] [--handler <handler>...]
+  aem scan               -d <domain> | -f <domains_file> | -l <live_hosts_file> [-o <output_dir>] [-t <threads>] [--ssrf-host <host>] [--ssrf-port <port>] [--proxy <proxy>] [--debug] [--handler <handler>...]
                          Scans for AEM webapps and tests for vulnerabilities
   apkx scan              -i <apk_or_ipa_path> | -p <package_id> [--platform android|ios] [-o <output_dir>] [--mitm]
   apkx mitm              -i <apk_path> [-o <output_dir>] | -p <package_name> [-o <output_dir>]
@@ -181,7 +181,7 @@ Commands:
   zerodays scan        -d <domain> | -s <subdomain> | -f <domains_file> [-t <threads>] [--cve <cve>] [--dos-test] [--enable-source-exposure] [--mongodb-host <host>] [--mongodb-port <port>] [--silent]
                                                                     For each domain: collects live hosts, then runs smart scan
                                                                     --silent: Output only vulnerable hosts (one per line, no progress)
-  ffuf fuzz            -u <url> | -d <domain> [-w <wordlist>] [-t <threads>] [--concurrency <n>] [--recursion] [--recursion-depth <depth>] [--bypass-403] [-e <extensions>] [--header <key:value>]
+  ffuf fuzz            -u <url> | -d <domain> | -f <domains_file> [-w <wordlist>] [-t <threads>] [--concurrency <n>] [--recursion] [--recursion-depth <depth>] [--bypass-403] [-e <extensions>] [--header <key:value>]
                                                                     Fuzz URLs with ffuf, filtering only 200 status codes
                                                                     Real-time size-based deduplication (skips duplicate response sizes)
                                                                     --bypass-403: Attempts 403 bypass techniques (headers and path modifications)
@@ -199,7 +199,7 @@ Commands:
 Workflows:
   lite run            -d <domain>
   fastlook run        -d <domain>
-  domain run          -d <domain>
+  domain run          -d <domain> | -f <domains_file> [--skip-ffuf]
 
 Database:
   db domains list
@@ -327,15 +327,16 @@ func handleWPConfusion(args []string) error {
 }
 
 // handleCnamesCommand parses: autoar cnames get -d <domain>
-// handleDomainCommand parses: autoar domain run -d <domain> [--skip-ffuf]
+// handleDomainCommand parses: autoar domain run -d <domain> | -f <domains_file> [--skip-ffuf]
 func handleDomainCommand(args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("usage: domain run -d <domain> [--skip-ffuf]")
+		return fmt.Errorf("usage: domain run -d <domain> | -f <domains_file> [--skip-ffuf]")
 	}
 	if args[0] == "run" {
 		args = args[1:]
 	}
 	var domain string
+	var domainsFile string
 	var skipFFuf bool
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
@@ -344,84 +345,177 @@ func handleDomainCommand(args []string) error {
 				domain = args[i+1]
 				i++
 			}
+		case "-f", "--file":
+			if i+1 < len(args) {
+				domainsFile = args[i+1]
+				i++
+			}
 		case "--skip-ffuf":
 			skipFFuf = true
 		}
 	}
-	if domain == "" {
-		return fmt.Errorf("domain (-d) is required")
+
+	if domain == "" && domainsFile == "" {
+		return fmt.Errorf("either domain (-d) or domains file (-f) is required")
+	}
+	if domain != "" && domainsFile != "" {
+		return fmt.Errorf("cannot use -d and -f together")
 	}
 
-	_, err := domainmod.RunDomain(domainmod.ScanOptions{
-		Domain:   domain,
-		SkipFFuf: skipFFuf,
-	})
-	
-	// Cleanup domain directory after scan completes (on exit, not before)
-	if cleanupErr := cleanupDomainDirectoryForCLI(domain); cleanupErr != nil {
-		fmt.Printf("[WARN] Failed to cleanup domain directory for %s: %v\n", domain, cleanupErr)
+	targets := []string{domain}
+	if domainsFile != "" {
+		fileDomains, err := readDomainsFromFile(domainsFile)
+		if err != nil {
+			return err
+		}
+		targets = fileDomains
 	}
-	
-	return err
+
+	var runErrs []string
+	for idx, target := range targets {
+		if len(targets) > 1 {
+			fmt.Printf("[%d/%d] Running domain workflow for %s\n", idx+1, len(targets), target)
+		}
+
+		_, err := domainmod.RunDomain(domainmod.ScanOptions{
+			Domain:   target,
+			SkipFFuf: skipFFuf,
+		})
+		if err != nil {
+			runErrs = append(runErrs, fmt.Sprintf("%s: %v", target, err))
+			fmt.Printf("[ERROR] Domain workflow failed for %s: %v\n", target, err)
+		}
+
+		// Cleanup domain directory after scan completes (on exit, not before)
+		if cleanupErr := cleanupDomainDirectoryForCLI(target); cleanupErr != nil {
+			fmt.Printf("[WARN] Failed to cleanup domain directory for %s: %v\n", target, cleanupErr)
+		}
+	}
+
+	if len(runErrs) > 0 {
+		return fmt.Errorf("%d domain scan(s) failed:\n%s", len(runErrs), strings.Join(runErrs, "\n"))
+	}
+
+	return nil
+}
+
+func readDomainsFromFile(path string) ([]string, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open domains file: %w", err)
+	}
+	defer file.Close()
+
+	var domains []string
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		domains = append(domains, line)
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("error reading domains file: %w", err)
+	}
+	if len(domains) == 0 {
+		return nil, fmt.Errorf("no valid domains found in file")
+	}
+
+	return domains, nil
+}
+
+func parseDomainTargets(args []string) ([]string, error) {
+	var domain, domainsFile string
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "-d", "--domain":
+			if i+1 < len(args) {
+				domain = args[i+1]
+				i++
+			}
+		case "-f", "--file":
+			if i+1 < len(args) {
+				domainsFile = args[i+1]
+				i++
+			}
+		}
+	}
+
+	if domain == "" && domainsFile == "" {
+		return nil, fmt.Errorf("either domain (-d) or domains file (-f) is required")
+	}
+	if domain != "" && domainsFile != "" {
+		return nil, fmt.Errorf("cannot use -d and -f together")
+	}
+
+	if domainsFile != "" {
+		targets, err := readDomainsFromFile(domainsFile)
+		if err != nil {
+			return nil, err
+		}
+		return targets, nil
+	}
+
+	return []string{domain}, nil
+}
+
+func runForTargets(moduleName string, targets []string, fn func(string) error) error {
+	var errs []string
+	for idx, target := range targets {
+		if len(targets) > 1 {
+			fmt.Printf("[%d/%d] Running %s for %s\n", idx+1, len(targets), moduleName, target)
+		}
+		if err := fn(target); err != nil {
+			errs = append(errs, fmt.Sprintf("%s: %v", target, err))
+			fmt.Printf("[ERROR] %s failed for %s: %v\n", moduleName, target, err)
+		}
+	}
+	if len(errs) > 0 {
+		return fmt.Errorf("%d %s scan(s) failed:\n%s", len(errs), moduleName, strings.Join(errs, "\n"))
+	}
+	return nil
 }
 
 // handleCnamesCommand parses: autoar cnames get -d <domain>
 // handleCnamesCommand parses: autoar cnames get -d <domain>
 func handleCnamesCommand(args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("usage: cnames get -d <domain>")
+		return fmt.Errorf("usage: cnames get -d <domain> | -f <domains_file>")
 	}
 	// Support legacy shape: cnames get -d <domain>
 	if args[0] == "get" {
 		args = args[1:]
 	}
-	var domain string
-	for i := 0; i < len(args); i++ {
-		switch args[i] {
-		case "-d", "--domain":
-			if i+1 < len(args) {
-				domain = args[i+1]
-				i++
-			}
-		}
-	}
-	if domain == "" {
-		return fmt.Errorf("domain (-d) is required")
+	targets, err := parseDomainTargets(args)
+	if err != nil {
+		return err
 	}
 
-	// Simple collection call matching signature (domain string)
-	_, err := cnames.CollectCNAMEs(domain)
-	return err
+	return runForTargets("cnames", targets, func(target string) error {
+		_, runErr := cnames.CollectCNAMEs(target)
+		return runErr
+	})
 }
 
 // handleFastlookCommand parses: autoar fastlook run -d <domain>
 func handleFastlookCommand(args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("usage: fastlook run -d <domain>")
+		return fmt.Errorf("usage: fastlook run -d <domain> | -f <domains_file>")
 	}
 	if args[0] == "run" {
 		args = args[1:]
 	}
-	var domain string
-	for i := 0; i < len(args); i++ {
-		switch args[i] {
-		case "-d", "--domain":
-			if i+1 < len(args) {
-				domain = args[i+1]
-				i++
-			}
-		}
-	}
-	if domain == "" {
-		return fmt.Errorf("domain (-d) is required")
+	targets, err := parseDomainTargets(args)
+	if err != nil {
+		return err
 	}
 
-	// Run fastlook with no file callback
-	_, err := fastlook.RunFastlook(domain, nil)
-	return err
+	return runForTargets("fastlook", targets, func(target string) error {
+		_, runErr := fastlook.RunFastlook(target, nil)
+		return runErr
+	})
 }
-
-
 
 // handleSubdomainCommand parses: autoar subdomain run -s <subdomain>
 func handleSubdomainCommand(args []string) error {
@@ -444,17 +538,17 @@ func handleSubdomainCommand(args []string) error {
 	if subdomain == "" {
 		return fmt.Errorf("subdomain (-s) is required; usage: subdomain run -s <subdomain>")
 	}
-	
+
 	// Extract root domain from subdomain for cleanup
 	rootDomain := extractRootDomainFromSubdomain(subdomain)
-	
+
 	_, err := subdomainmod.RunSubdomain(subdomain)
-	
+
 	// Cleanup domain directory after scan completes (on exit, not before)
 	if cleanupErr := cleanupDomainDirectoryForCLI(rootDomain); cleanupErr != nil {
 		fmt.Printf("[WARN] Failed to cleanup domain directory for %s: %v\n", rootDomain, cleanupErr)
 	}
-	
+
 	return err
 }
 
@@ -464,17 +558,17 @@ func extractRootDomainFromSubdomain(host string) string {
 	// Remove protocol if present
 	host = strings.TrimPrefix(host, "http://")
 	host = strings.TrimPrefix(host, "https://")
-	
+
 	// Remove port if present
 	if idx := strings.Index(host, ":"); idx != -1 {
 		host = host[:idx]
 	}
-	
+
 	// Remove path if present
 	if idx := strings.Index(host, "/"); idx != -1 {
 		host = host[:idx]
 	}
-	
+
 	parts := strings.Split(host, ".")
 	if len(parts) >= 2 {
 		// Return last two parts (e.g., example.com)
@@ -486,7 +580,7 @@ func extractRootDomainFromSubdomain(host string) string {
 // handleLiteCommand parses: autoar lite run -d <domain> [--skip-js] [--phase-timeout <seconds>] [--timeout-* <seconds>]
 func handleLiteCommand(args []string) error {
 	if len(args) == 0 || args[0] != "run" {
-		return fmt.Errorf("usage: lite run -d <domain> [--skip-js] [--phase-timeout <seconds>] [--timeout-livehosts <seconds>] [--timeout-reflection <seconds>] [--timeout-js <seconds>] [--timeout-cnames <seconds>] [--timeout-backup <seconds>] [--timeout-dns <seconds>] [--timeout-misconfig <seconds>] [--timeout-nuclei <seconds>]")
+		return fmt.Errorf("usage: lite run -d <domain> | -f <domains_file> [--skip-js] [--phase-timeout <seconds>] [--timeout-livehosts <seconds>] [--timeout-reflection <seconds>] [--timeout-js <seconds>] [--timeout-cnames <seconds>] [--timeout-backup <seconds>] [--timeout-dns <seconds>] [--timeout-misconfig <seconds>] [--timeout-nuclei <seconds>]")
 	}
 	args = args[1:]
 
@@ -570,18 +664,23 @@ func handleLiteCommand(args []string) error {
 		}
 	}
 
-	if opts.Domain == "" {
-		return fmt.Errorf("domain (-d) is required; usage: lite run -d <domain>")
+	targets, err := parseDomainTargets(args)
+	if err != nil {
+		return err
 	}
 
-	_, err := lite.RunLite(opts)
-	return err
+	return runForTargets("lite", targets, func(target string) error {
+		runOpts := opts
+		runOpts.Domain = target
+		_, runErr := lite.RunLite(runOpts)
+		return runErr
+	})
 }
 
 // handleNucleiCommand parses: autoar nuclei run -d <domain> | -u <url> [-m <mode>] [-t <threads>]
 func handleNucleiCommand(args []string) error {
 	if len(args) == 0 || args[0] != "run" {
-		return fmt.Errorf("usage: nuclei run -d <domain> | -u <url> [-m <mode>] [-t <threads>]")
+		return fmt.Errorf("usage: nuclei run -d <domain> | -f <domains_file> | -u <url> [-m <mode>] [-t <threads>]")
 	}
 	args = args[1:]
 
@@ -612,48 +711,53 @@ func handleNucleiCommand(args []string) error {
 			}
 		}
 	}
-	_, err := nuclei.RunNuclei(opts)
-	return err
+	if opts.URL != "" {
+		_, err := nuclei.RunNuclei(opts)
+		return err
+	}
+
+	targets, err := parseDomainTargets(args)
+	if err != nil {
+		return err
+	}
+
+	return runForTargets("nuclei", targets, func(target string) error {
+		runOpts := opts
+		runOpts.Domain = target
+		runOpts.URL = ""
+		_, runErr := nuclei.RunNuclei(runOpts)
+		return runErr
+	})
 }
 
 // handleReflectionCommand parses: autoar reflection scan -d <domain>
 func handleReflectionCommand(args []string) error {
 	if len(args) == 0 || args[0] != "scan" {
-		return fmt.Errorf("usage: reflection scan -d <domain>")
+		return fmt.Errorf("usage: reflection scan -d <domain> | -f <domains_file>")
 	}
 	args = args[1:]
-
-	var domain string
-	for i := 0; i < len(args); i++ {
-		switch args[i] {
-		case "-d", "--domain":
-			if i+1 < len(args) {
-				domain = args[i+1]
-				i++
-			}
-		}
+	targets, err := parseDomainTargets(args)
+	if err != nil {
+		return err
 	}
-	if domain == "" {
-		return fmt.Errorf("domain (-d) is required")
-	}
-	_, err := reflection.ScanReflection(domain)
-	return err
+	return runForTargets("reflection", targets, func(target string) error {
+		_, runErr := reflection.ScanReflection(target)
+		return runErr
+	})
 }
 
 // handleDalfoxCommand parses: autoar dalfox run -d <domain> [-t <threads>]
 func handleDalfoxCommand(args []string) error {
 	if len(args) == 0 || args[0] != "run" {
-		return fmt.Errorf("usage: dalfox run -d <domain> [-t <threads>]")
+		return fmt.Errorf("usage: dalfox run -d <domain> | -f <domains_file> [-t <threads>]")
 	}
 	args = args[1:]
 
-	var domain string
 	threads := 100
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
-		case "-d", "--domain":
+		case "-d", "--domain", "-f", "--file":
 			if i+1 < len(args) {
-				domain = args[i+1]
 				i++
 			}
 		case "-t", "--threads":
@@ -665,27 +769,28 @@ func handleDalfoxCommand(args []string) error {
 			}
 		}
 	}
-	if domain == "" {
-		return fmt.Errorf("domain (-d) is required")
+	targets, err := parseDomainTargets(args)
+	if err != nil {
+		return err
 	}
-	_, err := dalfox.RunDalfox(domain, threads)
-	return err
+	return runForTargets("dalfox", targets, func(target string) error {
+		_, runErr := dalfox.RunDalfox(target, threads)
+		return runErr
+	})
 }
 
 // handleTechCommand parses: autoar tech detect -d <domain> [-t <threads>]
 func handleTechCommand(args []string) error {
 	if len(args) == 0 || args[0] != "detect" {
-		return fmt.Errorf("usage: tech detect -d <domain> [-t <threads>]")
+		return fmt.Errorf("usage: tech detect -d <domain> | -f <domains_file> [-t <threads>]")
 	}
 	args = args[1:]
 
-	var domain string
 	threads := 100
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
-		case "-d", "--domain":
+		case "-d", "--domain", "-f", "--file":
 			if i+1 < len(args) {
-				domain = args[i+1]
 				i++
 			}
 		case "-t", "--threads":
@@ -697,51 +802,44 @@ func handleTechCommand(args []string) error {
 			}
 		}
 	}
-	if domain == "" {
-		return fmt.Errorf("domain (-d) is required")
+	targets, err := parseDomainTargets(args)
+	if err != nil {
+		return err
 	}
-	_, err := tech.DetectTech(domain, threads)
-	return err
+	return runForTargets("tech", targets, func(target string) error {
+		_, runErr := tech.DetectTech(target, threads)
+		return runErr
+	})
 }
 
 // handleGFCommand parses: autoar gf scan -d <domain>
 func handleGFCommand(args []string) error {
 	if len(args) == 0 || args[0] != "scan" {
-		return fmt.Errorf("usage: gf scan -d <domain>")
+		return fmt.Errorf("usage: gf scan -d <domain> | -f <domains_file>")
 	}
 	args = args[1:]
-
-	var domain string
-	for i := 0; i < len(args); i++ {
-		switch args[i] {
-		case "-d", "--domain":
-			if i+1 < len(args) {
-				domain = args[i+1]
-				i++
-			}
-		}
+	targets, err := parseDomainTargets(args)
+	if err != nil {
+		return err
 	}
-	if domain == "" {
-		return fmt.Errorf("domain (-d) is required")
-	}
-	_, err := gf.ScanGF(domain)
-	return err
+	return runForTargets("gf", targets, func(target string) error {
+		_, runErr := gf.ScanGF(target)
+		return runErr
+	})
 }
 
 // handleSQLMapCommand parses: autoar sqlmap run -d <domain> [-t <threads>]
 func handleSQLMapCommand(args []string) error {
 	if len(args) == 0 || args[0] != "run" {
-		return fmt.Errorf("usage: sqlmap run -d <domain> [-t <threads>]")
+		return fmt.Errorf("usage: sqlmap run -d <domain> | -f <domains_file> [-t <threads>]")
 	}
 	args = args[1:]
 
-	var domain string
 	threads := 100
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
-		case "-d", "--domain":
+		case "-d", "--domain", "-f", "--file":
 			if i+1 < len(args) {
-				domain = args[i+1]
 				i++
 			}
 		case "-t", "--threads":
@@ -753,27 +851,28 @@ func handleSQLMapCommand(args []string) error {
 			}
 		}
 	}
-	if domain == "" {
-		return fmt.Errorf("domain (-d) is required")
+	targets, err := parseDomainTargets(args)
+	if err != nil {
+		return err
 	}
-	_, err := sqlmap.RunSQLMap(domain, threads)
-	return err
+	return runForTargets("sqlmap", targets, func(target string) error {
+		_, runErr := sqlmap.RunSQLMap(target, threads)
+		return runErr
+	})
 }
 
 // handlePortsCommand parses: autoar ports scan -d <domain> [-t <threads>]
 func handlePortsCommand(args []string) error {
 	if len(args) == 0 || args[0] != "scan" {
-		return fmt.Errorf("usage: ports scan -d <domain> [-t <threads>]")
+		return fmt.Errorf("usage: ports scan -d <domain> | -f <domains_file> [-t <threads>]")
 	}
 	args = args[1:]
 
-	var domain string
 	threads := 100
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
-		case "-d", "--domain":
+		case "-d", "--domain", "-f", "--file":
 			if i+1 < len(args) {
-				domain = args[i+1]
 				i++
 			}
 		case "-t", "--threads":
@@ -785,11 +884,14 @@ func handlePortsCommand(args []string) error {
 			}
 		}
 	}
-	if domain == "" {
-		return fmt.Errorf("domain (-d) is required")
+	targets, err := parseDomainTargets(args)
+	if err != nil {
+		return err
 	}
-	_, err := ports.ScanPorts(domain, threads)
-	return err
+	return runForTargets("ports", targets, func(target string) error {
+		_, runErr := ports.ScanPorts(target, threads)
+		return runErr
+	})
 }
 
 // handleJSCommand parses:
@@ -797,17 +899,23 @@ func handlePortsCommand(args []string) error {
 //	autoar js scan -d <domain> [-s <subdomain>] [-t <threads>]
 func handleJSCommand(args []string) error {
 	if len(args) == 0 || args[0] != "scan" {
-		return fmt.Errorf("usage: js scan -d <domain> [-s <subdomain>] [-t <threads>]")
+		return fmt.Errorf("usage: js scan -d <domain> | -f <domains_file> [-s <subdomain>] [-t <threads>]")
 	}
 	args = args[1:]
 
 	opts := jsscan.Options{Threads: 100}
+	var domainsFile string
 
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "-d", "--domain":
 			if i+1 < len(args) {
 				opts.Domain = args[i+1]
+				i++
+			}
+		case "-f", "--file":
+			if i+1 < len(args) {
+				domainsFile = args[i+1]
 				i++
 			}
 		case "-s", "--subdomain":
@@ -825,6 +933,30 @@ func handleJSCommand(args []string) error {
 		}
 	}
 
+	if opts.Subdomain != "" && domainsFile != "" {
+		return fmt.Errorf("cannot use --subdomain with domains file (-f)")
+	}
+
+	if domainsFile != "" {
+		domains, err := readDomainsFromFile(domainsFile)
+		if err != nil {
+			return err
+		}
+		return runForTargets("js", domains, func(target string) error {
+			runOpts := opts
+			runOpts.Domain = target
+			runOpts.Subdomain = ""
+			res, runErr := jsscan.Run(runOpts)
+			if runErr != nil {
+				return runErr
+			}
+			fmt.Printf("[OK] JS scan completed for %s; found %d JS URLs\n", res.Domain, res.TotalJS)
+			fmt.Printf("[INFO] All URLs: %s\n", res.URLsFile)
+			fmt.Printf("[INFO] JS URLs (vulnerabilities): %s\n", res.VulnJSFile)
+			return nil
+		})
+	}
+
 	if opts.Domain == "" {
 		return fmt.Errorf("domain (-d) is required")
 	}
@@ -840,19 +972,20 @@ func handleJSCommand(args []string) error {
 	return nil
 }
 
-// handleFFufCommand parses: autoar ffuf fuzz -u <url> | -d <domain> [-w <wordlist>] [-t <threads>] [--recursion] [--bypass-403] [-e <extensions>] [--header <key:value>] [--concurrency <n>]
+// handleFFufCommand parses: autoar ffuf fuzz -u <url> | -d <domain> | -f <domains_file> [-w <wordlist>] [-t <threads>] [--recursion] [--bypass-403] [-e <extensions>] [--header <key:value>] [--concurrency <n>]
 func handleFFufCommand(args []string) error {
 	if len(args) == 0 || args[0] != "fuzz" {
-		return fmt.Errorf("usage: ffuf fuzz -u <url> | -d <domain> [-w <wordlist>] [-t <threads>] [--recursion] [--recursion-depth <depth>] [--bypass-403] [-e <extensions>] [--header <key:value>] [--concurrency <n>]")
+		return fmt.Errorf("usage: ffuf fuzz -u <url> | -d <domain> | -f <domains_file> [-w <wordlist>] [-t <threads>] [--recursion] [--recursion-depth <depth>] [--bypass-403] [-e <extensions>] [--header <key:value>] [--concurrency <n>]")
 	}
 	args = args[1:]
 
 	opts := ffuf.Options{
 		Threads:         40,
 		FollowRedirects: true,
-		CustomHeaders:    make(map[string]string),
+		CustomHeaders:   make(map[string]string),
 		Concurrency:     5, // Default concurrency for domain mode
 	}
+	var domainsFile string
 
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
@@ -864,6 +997,11 @@ func handleFFufCommand(args []string) error {
 		case "-d", "--domain":
 			if i+1 < len(args) {
 				opts.Domain = args[i+1]
+				i++
+			}
+		case "-f", "--file":
+			if i+1 < len(args) {
+				domainsFile = args[i+1]
 				i++
 			}
 		case "-w", "--wordlist":
@@ -928,6 +1066,35 @@ func handleFFufCommand(args []string) error {
 		}
 	}
 
+	if domainsFile != "" && opts.Target != "" {
+		return fmt.Errorf("cannot use -u with -f; use one input mode only")
+	}
+	if domainsFile != "" && opts.Domain != "" {
+		return fmt.Errorf("cannot use -d with -f; use one input mode only")
+	}
+
+	if domainsFile != "" {
+		domains, err := readDomainsFromFile(domainsFile)
+		if err != nil {
+			return err
+		}
+
+		return runForTargets("ffuf", domains, func(target string) error {
+			runOpts := opts
+			runOpts.Domain = target
+			runOpts.Target = ""
+			result, runErr := ffuf.RunFFuf(runOpts)
+			if runErr != nil {
+				return runErr
+			}
+
+			fmt.Printf("[OK] FFuf domain mode completed for %s\n", target)
+			fmt.Printf("[INFO] Scanned %d hosts, found %d total unique results\n", result.HostsScanned, result.TotalFound)
+			fmt.Printf("[INFO] Results saved to: %s\n", result.OutputFile)
+			return nil
+		})
+	}
+
 	// Validate that either -u or -d is provided, but not both
 	if opts.Target == "" && opts.Domain == "" {
 		return fmt.Errorf("either target URL (-u) or domain (-d) is required")
@@ -954,8 +1121,8 @@ func handleFFufCommand(args []string) error {
 		fmt.Printf("[OK] FFuf domain mode completed for %s\n", opts.Domain)
 		fmt.Printf("[INFO] Scanned %d hosts, found %d total unique results\n", result.HostsScanned, result.TotalFound)
 	} else {
-	fmt.Printf("[OK] FFuf fuzzing completed for %s\n", opts.Target)
-	fmt.Printf("[INFO] Found %d unique results\n", result.TotalFound)
+		fmt.Printf("[OK] FFuf fuzzing completed for %s\n", opts.Target)
+		fmt.Printf("[INFO] Found %d unique results\n", result.TotalFound)
 	}
 	fmt.Printf("[INFO] Results saved to: %s\n", result.OutputFile)
 	return nil
@@ -1112,19 +1279,19 @@ func handleApkXScan(args []string) error {
 		if platform == "" {
 			platform = "android" // Default to android
 		}
-		
+
 		packageOpts := apkxmod.PackageOptions{
-			Package:  packageName,
+			Package:   packageName,
 			Platform:  platform,
 			OutputDir: opts.OutputDir,
 			MITM:      opts.MITM,
 		}
-		
+
 		res, err := apkxmod.RunFromPackage(packageOpts)
 		if err != nil {
 			return err
 		}
-		
+
 		fmt.Printf("[OK] apkX scan completed. Reports in: %s\n", res.ReportDir)
 		fmt.Printf("[INFO] Log: %s\n", res.LogFile)
 		if res.FromCache {
@@ -1260,9 +1427,9 @@ func handleJWTCommand(args []string) error {
 	// Normalize CLI flags/positionals so jwt-hack always sees:
 	//   jwt-hack scan <TOKEN> [flags...]
 	var (
-		token      string
-		jwtArgs    []string
-		skipNext   bool
+		token    string
+		jwtArgs  []string
+		skipNext bool
 	)
 
 	for i := 0; i < len(raw); i++ {
@@ -1498,7 +1665,7 @@ func handleZerodaysCommand(args []string) error {
 
 	var domains []string
 	var isSubdomainMode bool
-	
+
 	if subdomain != "" {
 		// Single subdomain mode
 		domains = []string{subdomain}
@@ -1561,13 +1728,13 @@ func handleZerodaysCommand(args []string) error {
 
 		// Prepare zerodays options
 		zerodaysOpts := zerodays.Options{
-			Threads:             threads,
-			DOSTest:             dosTest,
+			Threads:              threads,
+			DOSTest:              dosTest,
 			EnableSourceExposure: enableSourceExposure,
-			Silent:              silent,
-			CVEs:                cves,
-			MongoDBHost:         mongoDBHost,
-			MongoDBPort:         mongoDBPort,
+			Silent:               silent,
+			CVEs:                 cves,
+			MongoDBHost:          mongoDBHost,
+			MongoDBPort:          mongoDBPort,
 		}
 
 		// Set Domain or Subdomain based on input mode
@@ -1611,7 +1778,7 @@ func handleZerodaysCommand(args []string) error {
 			react2ShellFile := filepath.Join(outputDir, "react2shell-cve-2025-55182.txt")
 			mongoFile := filepath.Join(outputDir, "mongodb-cve-2025-14847.txt")
 			jsonFile := filepath.Join(outputDir, "zerodays-results.json")
-			
+
 			// Check all expected files
 			filesExist := true
 			if _, err := os.Stat(react2ShellFile); err != nil {
@@ -1626,7 +1793,7 @@ func handleZerodaysCommand(args []string) error {
 				fmt.Fprintf(os.Stderr, "[WARN] Zerodays JSON file not found: %s (error: %v)\n", jsonFile, err)
 				filesExist = false
 			}
-			
+
 			if filesExist && !silent {
 				fmt.Printf("[%d/%d] %s: Results saved to %s\n", idx+1, len(domains), targetDomain, outputDir)
 			}
@@ -1692,13 +1859,13 @@ func cleanupDomainDirectoryForCLI(domain string) error {
 	if resultsDir == "" {
 		resultsDir = "new-results"
 	}
-	
+
 	domainDir := filepath.Join(resultsDir, domain)
-	
+
 	if _, err := os.Stat(domainDir); os.IsNotExist(err) {
 		return nil // Directory doesn't exist, nothing to clean
 	}
-	
+
 	if err := os.RemoveAll(domainDir); err != nil {
 		return fmt.Errorf("failed to cleanup domain directory: %w", err)
 	}
@@ -2199,7 +2366,7 @@ func writeLinesToFileForCLI(path string, lines []string) error {
 // handleAEMCommand routes AEM scan commands
 func handleAEMCommand(args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("usage: aem scan -d <domain> | -l <live_hosts_file> [options]")
+		return fmt.Errorf("usage: aem scan -d <domain> | -f <domains_file> | -l <live_hosts_file> [options]")
 	}
 
 	subcommand := args[0]
@@ -2212,12 +2379,18 @@ func handleAEMCommand(args []string) error {
 
 func handleAEMScan(args []string) error {
 	opts := aemmod.Options{}
+	var domainsFile string
 
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "-d", "--domain":
 			if i+1 < len(args) {
 				opts.Domain = args[i+1]
+				i++
+			}
+		case "-f", "--file":
+			if i+1 < len(args) {
+				domainsFile = args[i+1]
 				i++
 			}
 		case "-l", "--live-hosts", "--livehosts":
@@ -2264,8 +2437,34 @@ func handleAEMScan(args []string) error {
 		}
 	}
 
+	if domainsFile != "" && opts.LiveHostsFile != "" {
+		return fmt.Errorf("cannot use -f with -l; use one input mode only")
+	}
+	if domainsFile != "" && opts.Domain != "" {
+		return fmt.Errorf("cannot use -f with -d; use one input mode only")
+	}
+
+	if domainsFile != "" {
+		domains, err := readDomainsFromFile(domainsFile)
+		if err != nil {
+			return err
+		}
+
+		if opts.Threads == 0 {
+			opts.Threads = 50
+		}
+
+		return runForTargets("aem", domains, func(target string) error {
+			runOpts := opts
+			runOpts.Domain = target
+			runOpts.LiveHostsFile = ""
+			_, runErr := aemmod.Run(runOpts)
+			return runErr
+		})
+	}
+
 	if opts.Domain == "" && opts.LiveHostsFile == "" {
-		return fmt.Errorf("either -d (domain) or -l (live_hosts_file) is required")
+		return fmt.Errorf("either -d (domain), -f (domains file), or -l (live_hosts_file) is required")
 	}
 
 	// Set defaults
@@ -2323,7 +2522,7 @@ func handleMisconfigCommand(args []string) error {
 			return fmt.Errorf("usage: misconfig scan <target> [--service <service-id>] [--delay <ms>] [--permutations]")
 		}
 		opts.Target = subArgs[0]
-		
+
 		for i := 1; i < len(subArgs); i++ {
 			switch subArgs[i] {
 			case "--service", "-s":
@@ -2538,18 +2737,18 @@ func handleMonitorCommand(args []string) error {
 	}
 
 	subcommand := args[0]
-	
+
 	if subcommand == "subdomains" {
 		if len(args) > 1 && args[1] == "manage" {
 			return handleSubdomainMonitorManageCommand(args[2:])
 		}
 		return handleSubdomainMonitorCommand(args[1:])
 	}
-	
+
 	if subcommand != "updates" {
 		return fmt.Errorf("unknown monitor subcommand: %s (use 'updates' or 'subdomains')", subcommand)
 	}
-	
+
 	if len(args) < 2 {
 		return fmt.Errorf("usage: monitor updates <list|add|remove|start|stop> [options]")
 	}
@@ -2996,15 +3195,13 @@ func handleGitHubCommand(args []string) error {
 }
 
 func handleSubdomainsGo(args []string) error {
-	var domain string
 	threads := 100
 
-	// Parse arguments: get -d <domain> [-t <threads>] [-s|--silent]
+	// Parse arguments: get -d <domain> | -f <domains_file> [-t <threads>] [-s|--silent]
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
-		case "-d", "--domain":
+		case "-d", "--domain", "-f", "--file":
 			if i+1 < len(args) {
-				domain = args[i+1]
 				i++
 			}
 		case "-t", "--threads":
@@ -3019,65 +3216,63 @@ func handleSubdomainsGo(args []string) error {
 		}
 	}
 
-	if domain == "" {
-		return fmt.Errorf("domain (-d) is required")
-	}
-
-	// Use Go subdomains module
-	results, err := subdomains.EnumerateSubdomains(domain, threads)
+	targets, err := parseDomainTargets(args)
 	if err != nil {
-		return fmt.Errorf("failed to enumerate subdomains: %v", err)
+		return err
 	}
 
-	// Save to file (same location as bash module)
-	resultsDir := os.Getenv("AUTOAR_RESULTS_DIR")
-	if resultsDir == "" {
-		resultsDir = "new-results"
-	}
-	domainDir := filepath.Join(resultsDir, domain, "subs")
-	if err := os.MkdirAll(domainDir, 0755); err != nil {
-		return fmt.Errorf("failed to create directory: %v", err)
-	}
+	return runForTargets("subdomains", targets, func(domain string) error {
+		results, runErr := subdomains.EnumerateSubdomains(domain, threads)
+		if runErr != nil {
+			return fmt.Errorf("failed to enumerate subdomains: %v", runErr)
+		}
 
-	outputFile := filepath.Join(domainDir, "all-subs.txt")
-	file, err := os.Create(outputFile)
-	if err != nil {
-		return fmt.Errorf("failed to create output file: %v", err)
-	}
-	defer file.Close()
+		resultsDir := os.Getenv("AUTOAR_RESULTS_DIR")
+		if resultsDir == "" {
+			resultsDir = "new-results"
+		}
+		domainDir := filepath.Join(resultsDir, domain, "subs")
+		if mkErr := os.MkdirAll(domainDir, 0755); mkErr != nil {
+			return fmt.Errorf("failed to create directory: %v", mkErr)
+		}
 
-	for _, subdomain := range results {
-		fmt.Fprintln(file, subdomain)
-	}
+		outputFile := filepath.Join(domainDir, "all-subs.txt")
+		file, createErr := os.Create(outputFile)
+		if createErr != nil {
+			return fmt.Errorf("failed to create output file: %v", createErr)
+		}
+		defer file.Close()
 
-	fmt.Printf("[OK] Found %d unique subdomains for %s\n", len(results), domain)
+		for _, subdomain := range results {
+			fmt.Fprintln(file, subdomain)
+		}
 
-	// Save to database if configured
-	if os.Getenv("DB_HOST") != "" {
-		if err := db.Init(); err == nil {
-			db.InitSchema() // Ignore errors
-			if err := db.BatchInsertSubdomains(domain, results, false); err != nil {
-				fmt.Printf("[WARN] Failed to save subdomains to database: %v\n", err)
+		fmt.Printf("[OK] Found %d unique subdomains for %s\n", len(results), domain)
+
+		if os.Getenv("DB_HOST") != "" {
+			if dbErr := db.Init(); dbErr == nil {
+				db.InitSchema()
+				if insertErr := db.BatchInsertSubdomains(domain, results, false); insertErr != nil {
+					fmt.Printf("[WARN] Failed to save subdomains to database: %v\n", insertErr)
+				}
 			}
 		}
-	}
 
-	return nil
+		return nil
+	})
 }
 
 // handleLivehostsGo runs live host discovery for a given domain using the Go livehosts module.
 // Live host filtering implemented in Go.
 func handleLivehostsGo(args []string) error {
-	var domain string
 	threads := 100
 	silent := false
 
 	// Parse arguments: get -d <domain> [-t <threads>] [-s|--silent]
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
-		case "-d", "--domain":
+		case "-d", "--domain", "-f", "--file":
 			if i+1 < len(args) {
-				domain = args[i+1]
 				i++
 			}
 		case "-t", "--threads":
@@ -3092,36 +3287,36 @@ func handleLivehostsGo(args []string) error {
 		}
 	}
 
-	if domain == "" {
-		fmt.Println("Usage: livehosts get -d <domain> [-t <threads>] [-s|--silent]")
-		return fmt.Errorf("domain is required")
-	}
-
-	res, err := livehosts.FilterLiveHosts(domain, threads, silent)
+	targets, err := parseDomainTargets(args)
 	if err != nil {
+		fmt.Println("Usage: livehosts get -d <domain> | -f <domains_file> [-t <threads>] [-s|--silent]")
 		return err
 	}
 
-	fmt.Printf("[INFO] Filtering live hosts via httpx with %d threads\n", res.Threads)
-	fmt.Printf("[OK] Found %d live subdomains out of %d for %s\n", res.LiveSubs, res.TotalSubs, res.Domain)
-	fmt.Printf("[INFO] Live hosts saved to %s\n", res.LiveSubsFile)
+	return runForTargets("livehosts", targets, func(domain string) error {
+		res, runErr := livehosts.FilterLiveHosts(domain, threads, silent)
+		if runErr != nil {
+			return runErr
+		}
 
-	return nil
+		fmt.Printf("[INFO] Filtering live hosts via httpx with %d threads\n", res.Threads)
+		fmt.Printf("[OK] Found %d live subdomains out of %d for %s\n", res.LiveSubs, res.TotalSubs, res.Domain)
+		fmt.Printf("[INFO] Live hosts saved to %s\n", res.LiveSubsFile)
+		return nil
+	})
 }
 
 // handleURLsGo runs URL collection for a given domain using the Go urls module.
 // URL collection implemented in Go.
 func handleURLsGo(args []string) error {
-	var domain string
 	threads := 100
 	skipSubdomainEnum := false
 
 	// Parse arguments: collect -d <domain> [-t <threads>] [--subdomain]
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
-		case "-d", "--domain":
+		case "-d", "--domain", "-f", "--file":
 			if i+1 < len(args) {
-				domain = args[i+1]
 				i++
 			}
 		case "-t", "--threads":
@@ -3136,28 +3331,30 @@ func handleURLsGo(args []string) error {
 		}
 	}
 
-	if domain == "" {
-		fmt.Println("Usage: urls collect -d <domain> [-t <threads>] [--subdomain]")
-		fmt.Println("  --subdomain: Treat input as a single subdomain (skip subdomain enumeration)")
-		return fmt.Errorf("domain is required")
-	}
-
-	res, err := urls.CollectURLs(domain, threads, skipSubdomainEnum)
+	targets, err := parseDomainTargets(args)
 	if err != nil {
+		fmt.Println("Usage: urls collect -d <domain> | -f <domains_file> [-t <threads>] [--subdomain]")
+		fmt.Println("  --subdomain: Treat input as a single subdomain (skip subdomain enumeration)")
 		return err
 	}
 
-	mode := "domain"
-	if skipSubdomainEnum {
-		mode = "subdomain"
-	}
-	fmt.Printf("[OK] Found %d total URLs; %d JavaScript URLs for %s (mode: %s)\n", res.TotalURLs, res.JSURLs, res.Domain, mode)
-	fmt.Printf("[INFO] All URLs saved to %s\n", res.AllFile)
-	if res.JSURLs > 0 {
-		fmt.Printf("[INFO] JS URLs saved to %s\n", res.JSFile)
-	}
+	return runForTargets("urls", targets, func(domain string) error {
+		res, runErr := urls.CollectURLs(domain, threads, skipSubdomainEnum)
+		if runErr != nil {
+			return runErr
+		}
 
-	return nil
+		mode := "domain"
+		if skipSubdomainEnum {
+			mode = "subdomain"
+		}
+		fmt.Printf("[OK] Found %d total URLs; %d JavaScript URLs for %s (mode: %s)\n", res.TotalURLs, res.JSURLs, res.Domain, mode)
+		fmt.Printf("[INFO] All URLs saved to %s\n", res.AllFile)
+		if res.JSURLs > 0 {
+			fmt.Printf("[INFO] JS URLs saved to %s\n", res.JSFile)
+		}
+		return nil
+	})
 }
 
 // handleDNSCommand routes `autoar dns ...` to the dns Go module.
@@ -3165,43 +3362,35 @@ func handleURLsGo(args []string) error {
 // while the underlying implementation still uses the existing bash tooling.
 func handleDNSCommand(args []string) error {
 	if len(args) < 1 {
-		return fmt.Errorf("usage: autoar dns <takeover|cname|ns|azure-aws|dnsreaper|dangling-ip|all> -d <domain>")
+		return fmt.Errorf("usage: autoar dns <takeover|cname|ns|azure-aws|dnsreaper|dangling-ip|all> -d <domain> | -f <domains_file>")
 	}
 
 	sub := args[0]
 	subArgs := args[1:]
 
-	// parse -d/--domain
-	var domain string
-	for i := 0; i < len(subArgs); i++ {
-		switch subArgs[i] {
-		case "-d", "--domain":
-			if i+1 < len(subArgs) {
-				domain = subArgs[i+1]
-				i++
-			}
-		}
-	}
-	if domain == "" {
-		return fmt.Errorf("domain (-d) is required")
+	targets, err := parseDomainTargets(subArgs)
+	if err != nil {
+		return err
 	}
 
-	switch sub {
-	case "takeover", "all":
-		return dns.Takeover(domain)
-	case "cname":
-		return dns.CNAME(domain)
-	case "ns":
-		return dns.NS(domain)
-	case "azure-aws":
-		return dns.AzureAWS(domain)
-	case "dnsreaper":
-		return dns.DNSReaper(domain)
-	case "dangling-ip":
-		return dns.DanglingIP(domain)
-	default:
-		return fmt.Errorf("unknown dns action: %s", sub)
-	}
+	return runForTargets("dns", targets, func(domain string) error {
+		switch sub {
+		case "takeover", "all":
+			return dns.Takeover(domain)
+		case "cname":
+			return dns.CNAME(domain)
+		case "ns":
+			return dns.NS(domain)
+		case "azure-aws":
+			return dns.AzureAWS(domain)
+		case "dnsreaper":
+			return dns.DNSReaper(domain)
+		case "dangling-ip":
+			return dns.DanglingIP(domain)
+		default:
+			return fmt.Errorf("unknown dns action: %s", sub)
+		}
+	})
 }
 
 func handleDBCommand(args []string) error {
@@ -3487,12 +3676,12 @@ func handleDBCommand(args []string) error {
 				uploadToR2 = true
 			}
 		}
-		
+
 		backupPath, r2URL, err := db.BackupDatabase(uploadToR2)
 		if err != nil {
 			return fmt.Errorf("failed to backup database: %v", err)
 		}
-		
+
 		fmt.Printf("[OK] Database backup created: %s\n", backupPath)
 		if r2URL != "" {
 			fmt.Printf("[OK] Database backup uploaded to R2: %s\n", r2URL)
